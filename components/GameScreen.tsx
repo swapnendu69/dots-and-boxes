@@ -14,11 +14,11 @@ interface GameScreenProps {
 
 const GameScreen: React.FC<GameScreenProps> = ({ gridSize, players, mode, onExit }) => {
   const [gameState, setGameState] = useState<GameState>(() => createInitialState(gridSize, players));
-  const [isCPUTurn, setIsCPUTurn] = useState(false);
-
   // Determine active player
   const activePlayer = gameState.players[gameState.currentPlayerIndex];
-  
+  // Determine if it is CPU's turn
+  const isCpuTurn = mode === GameMode.VS_CPU && gameState.currentPlayerIndex === 1 && !gameState.isGameOver;
+
   const handleMove = useCallback((move: LineMove) => {
     const { type, row, col } = move;
 
@@ -45,7 +45,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ gridSize, players, mode, onExit
       const { boxesCompleted, newBoxes } = checkBoxCompletion(newState, move, activeP.id);
 
       if (boxesCompleted > 0) {
-        // Player keeps turn
+        // Player keeps turn (extra turn for scoring a box!)
         newState.boxes = newBoxes;
         newState.players[prevState.currentPlayerIndex].score += boxesCompleted;
       } else {
@@ -68,23 +68,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ gridSize, players, mode, onExit
     });
   }, [gridSize]);
 
-  // CPU Effect
+  // CPU Move Effect: Triggers on CPU turn and after every CPU move (including extra turns when CPU fills a box)
   useEffect(() => {
-    if (mode === GameMode.VS_CPU && !gameState.isGameOver) {
-      const isCpu = gameState.currentPlayerIndex === 1;
-      setIsCPUTurn(isCpu);
-
-      if (isCpu) {
-        const timer = setTimeout(() => {
-          const move = computeBestMove(gameState);
-          handleMove(move);
-        }, CPU_DELAY_MS);
-        return () => clearTimeout(timer);
-      }
-    } else {
-      setIsCPUTurn(false);
+    if (mode === GameMode.VS_CPU && !gameState.isGameOver && gameState.currentPlayerIndex === 1) {
+      const timer = setTimeout(() => {
+        const move = computeBestMove(gameState);
+        handleMove(move);
+      }, CPU_DELAY_MS);
+      return () => clearTimeout(timer);
     }
-  }, [gameState.currentPlayerIndex, gameState.isGameOver, mode, handleMove]);
+  }, [gameState, mode, handleMove]);
 
 
   return (
@@ -101,7 +94,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ gridSize, players, mode, onExit
                  {gameState.winner === 'DRAW' ? 'Game Drawn!' : `Winner: ${gameState.players.find(p => p.id === gameState.winner)?.name}`}
                </span>
              ) : (
-               <span>Current Turn: <span className="font-black px-1.5 py-0.5 rounded-md text-white" style={{ backgroundColor: activePlayer.color }}>{activePlayer.name}</span></span>
+               <span className="inline-flex items-center gap-1.5">
+                 <span>Current Turn:</span>
+                 <span className="font-black px-2 py-0.5 rounded-md text-white shadow-sm inline-flex items-center gap-1" style={{ backgroundColor: activePlayer.color }}>
+                   {activePlayer.name}
+                   {isCpuTurn && <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                 </span>
+                 {isCpuTurn && <span className="text-xs text-slate-500 font-medium hidden sm:inline">(Thinking...)</span>}
+               </span>
              )}
           </div>
           <div className="w-12 sm:w-16"></div> {/* Spacer */}
@@ -138,7 +138,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ gridSize, players, mode, onExit
         <Board 
           gameState={gameState} 
           onLineClick={handleMove} 
-          interactive={!gameState.isGameOver && !isCPUTurn}
+          interactive={!gameState.isGameOver && !isCpuTurn}
         />
         
         {/* Game Over Overlay */}
