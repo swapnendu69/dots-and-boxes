@@ -2,7 +2,7 @@
 
 Dots and Boxes is a classic turn-based pencil-and-paper strategy game brought to life as a clean, offline-ready digital board game. Players take turns connecting adjacent dots with lines; completing the fourth side of a 1×1 square claims the box, awards a point, and grants an immediate bonus turn. The player with the most claimed boxes when the entire grid is completed wins the match.
 
----
+https://github.com/user-attachments/assets/0a95a764-b047-4869-930c-cce1bbc21d17
 
 ## 📖 How to Play
 
