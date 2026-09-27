@@ -1,0 +1,33 @@
+# Dependencies & Lockfiles
+node_modules/
+.pnpm-store/
+bun.lock*
+.env
+.env.*
+.env.local
+
+# Build outputs
+dist/
+build/
+*.apk
+*.aab
+
+# Capacitor & Android build files
+android/app/build/
+android/build/
+android/.gradle/
+android/captures/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+
+# IDE & System files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+*.log

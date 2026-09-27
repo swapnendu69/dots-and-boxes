@@ -1,0 +1,6 @@
+{
+  "name": "Dots and Boxes",
+  "description": "A classic strategy game supporting Local Multiplayer, Vs CPU (Minimax), and Online modes. Features dynamic grid sizes and a clean, responsive UI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,96 @@
+name: Build Android APK & Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Install Dependencies
+        run: |
+          npm install --legacy-peer-deps
+
+      - name: Build Web Application
+        run: |
+          npm run build
+
+      - name: Setup & Sync Capacitor Android
+        run: |
+          # Install Capacitor CLI & platform
+          npm install @capacitor/core @capacitor/cli @capacitor/android --save --legacy-peer-deps
+
+          # Remove existing repo android folder to eliminate corrupted/missing gradle-wrapper.jar
+          rm -rf android
+
+          # Generate clean, authentic Android project with official Gradle Wrapper
+          npx cap add android
+
+          # Replace default Capacitor icons with custom Dots and Boxes adaptive icons
+          if [ -d "android-res" ]; then
+            echo "Applying custom Dots and Boxes app icons..."
+            cp -rf android-res/* android/app/src/main/res/
+          fi
+
+          # Sync web build assets into Android project
+          npx cap sync android
+
+      - name: Make Gradle Executable
+        run: |
+          cd android
+          sed -i 's/\r$//' gradlew || true
+          chmod +x gradlew
+
+      - name: Build Android APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare APK Output
+        run: |
+          mkdir -p build-output
+          cp android/app/build/outputs/apk/debug/app-debug.apk build-output/Dots-and-Boxes.apk
+          echo "APK successfully built: build-output/Dots-and-Boxes.apk"
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dots-and-Boxes-APK
+          path: build-output/Dots-and-Boxes.apk
+          retention-days: 30
+
+      - name: Publish GitHub Release (On Tag)
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: Dots and Boxes Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: build-output/Dots-and-Boxes.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
